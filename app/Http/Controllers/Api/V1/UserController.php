@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ImportRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
-use App\Imports\UsersImport;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Maatwebsite\Excel\Excel;
+use OpenSpout\Common\Exception\IOException;
+use OpenSpout\Common\Exception\UnsupportedTypeException;
+use OpenSpout\Reader\Exception\ReaderNotOpenedException;
 use Symfony\Component\HttpFoundation\Response;
+use Rap2hpoutre\FastExcel\FastExcel;
 
 class UserController extends Controller
 {
@@ -31,9 +32,23 @@ class UserController extends Controller
         ], Response::HTTP_CREATED);
     }
 
+    /**
+     * @throws IOException
+     * @throws UnsupportedTypeException
+     * @throws ReaderNotOpenedException
+     */
     public function import(ImportRequest $request): JsonResponse
     {
-        Excel::import(new UsersImport, $request->file('file'));
+        $file = $request->file('file');
+        $filePath = $file->path();
+
+        $users = (new FastExcel)->withoutHeaders()->import($filePath)->skip(1)->map(function ($row) {
+            return User::create([
+                'full_name' => $row[0],
+                'email' => $row[1],
+                'phone_number' => $row[2]
+            ]);
+        });
 
         return response()->json([
             'message' => 'User Added Successfully'
