@@ -42,16 +42,25 @@ class UserController extends Controller
         $file = $request->file('file');
         $filePath = $file->path();
 
-        $users = (new FastExcel)->withoutHeaders()->import($filePath)->skip(1)->map(function ($row) {
-            return User::create([
-                'full_name' => $row[0],
-                'email' => $row[1],
-                'phone_number' => $row[2]
-            ]);
-        });
+        $users = (new FastExcel)->withoutHeaders()->import($filePath)->skip(1)->toArray();
+
+        if (count($users) !== 1) {
+            return response()->json([
+                'message' => 'Only one User is allowed'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $users[1];
+
+        $transformedUser = [
+            'full_name' => $user[0],
+            'email' => $user[1],
+            'phone_number' => $user[2]
+        ];
 
         return response()->json([
-            'message' => 'User Added Successfully'
-        ], Response::HTTP_CREATED);
+            'data' => [$transformedUser],
+            'message' => 'Data Retrieved Successfully'
+        ], Response::HTTP_OK);
     }
 }
