@@ -28,7 +28,7 @@ class UserController extends Controller
         $user = User::create($request->all());
 
         return response()->json([
-            'data' => new UserResource($user)
+            'message' => "User created successfully"
         ], Response::HTTP_CREATED);
     }
 
